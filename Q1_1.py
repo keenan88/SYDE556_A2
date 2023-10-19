@@ -35,10 +35,17 @@ def generate_signal(T, dt, power_desired, limit, seed):
             X_w[-freq_idx] = np.conjugate(signal) # Set the negative frequency too, ifft needs the pos and neg frequency
             
     y = np.real(np.fft.ifft(X_w))
+    
+    power = np.sqrt(np.mean(y**2))
+    print("Power pre scale: ", power)
 
-    scaling_factor = power_desired * np.sqrt(T / (np.sum(np.square(y))))
-
+    scaling_factor = power_desired / np.sqrt(np.sum(y**2) / N)
+    
     y = y * scaling_factor
+    
+    power = np.sqrt(np.mean(y**2))
+    print("Power post scale: ", power)
+    
     X_w = X_w * scaling_factor
     
     return x, y, xf, X_w

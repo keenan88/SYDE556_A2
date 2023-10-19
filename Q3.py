@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from Q1_1 import generate_signal
 from math import exp
 
-def get_neuron_response_to_current(x_linspace, dt, current, encoder):
+def get_neuron_response_to_current(time, dt, current, encoder):
     Trc = 20/1000
     Tref = 2/1000
     
@@ -21,7 +21,7 @@ def get_neuron_response_to_current(x_linspace, dt, current, encoder):
     a1 = 150
     
     J_bias = 1 / (1 - exp( (Tref - 1 / a0 ) / Trc))
-    alpha = (1 / (1 - exp( (Tref - 1 / a1 ) / Trc)) - J_bias) / np.dot(encoder, x1)
+    alpha = (1 / (1 - exp( (Tref - 1 / a1 ) / Trc)) - J_bias) / np.dot(1, x1)
 
     Vth = 1
     v = 0
@@ -30,28 +30,32 @@ def get_neuron_response_to_current(x_linspace, dt, current, encoder):
     spikes_positions = []
     i = 0
 
-    while i < len(x_linspace):
+    while i < len(time):
+        J = alpha * encoder * current[int(i)] + J_bias
+        v += dt * (J - v) / Trc
+        
+        if v < 0: #Normalize any negative voltage to 0.
+            v = 0
+
         if v >= Vth:
             v = 0
-            i += Tref * 1000 # Scaled to ms, since that is our step size here
-            voltages.append(0)
-            voltages.append(0)
-            spike_times.append(x_linspace[int(i - 2)])
+            spike_times.append(time[int(i - 2)])
             spikes_positions.append(encoder)
             spikes_positions.append(0)
-        else:
-            if v < 0:
-                v = 0
+            
+            ref_ms = Tref * 100
+            j = 0
+            while j < ref_ms:
+                voltages.append(0)
+                j += 1
+                i += 1
+            
+        else: # No spike
             voltages.append(v)
-            i += 1
             spikes_positions.append(0)
+            i += 1
             
-        if i < len(x_linspace):
-            
-            J = alpha * encoder * current[int(i)] + J_bias
-            v += dt * (J - v) / Trc
-        
-    return voltages[0:len(x_linspace)], spike_times[0:len(x_linspace)], spikes_positions[0:len(x_linspace)]
+    return voltages[0:len(time)], spike_times[0:len(time)], spikes_positions[0:len(time)]
     
 def plot_spikerate(time, spike_times, current, voltage, title):
     plt_lim = -1

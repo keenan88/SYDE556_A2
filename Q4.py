@@ -13,15 +13,17 @@ from Q3 import get_neuron_response_to_current, plot_spikerate
 
 dt = 0.001
 
-time, current, frequencies, components = generate_signal(T = 2, dt = dt, power_desired = 5, limit = 5, seed = 12345)
+time, current, frequencies, components = generate_signal(T = 2, dt = dt, power_desired = 0.5, limit = 5, seed = 12345)
+
+
 
 
 
 voltages_pos_enc, spike_times_pos, pos_spikes_positions = get_neuron_response_to_current(time, dt, current, 1)
 voltages_neg_enc, spike_times_neg, neg_spikes_positions = get_neuron_response_to_current(time, dt, current, -1)
 
-#plot_spikerate(time, spike_times, current, voltages_pos_enc, "4) Random current input, positive encoder")
-#plot_spikerate(time, spike_times, current, voltages_pos_enc, "4) Random current input, negative encoder")
+#plot_spikerate(time, spike_times_pos, current, voltages_pos_enc, "4) Random current input, positive encoder")
+#plot_spikerate(time, spike_times_neg, current, voltages_pos_enc, "4) Random current input, negative encoder")
 
 x = current
 X = components
@@ -71,16 +73,13 @@ r = spikes[0] - spikes[1]
 # fourier transform of the difference between the pos encoded and neg encoded neuron's voltages.
 R = np.fft.fftshift(np.fft.fft(r))
 
-# Frequency series equal to number of samples, normalized against T.
-# Subtracting Nt / (2 * T) centers the series about 0, I expect to deal with fft
-# providing pos and neg frequencies. Cut frequencies down to half the number of samples
-# To reach the nyquist frequency and no further.
+# Setting up range of window function W2
 fs = np.arange(Nt) / T - Nt / (2.0 * T)
 
 # Tunable parameter for the window function W2.
 # Increasing sigma_t will cause the window to be tighter
 # Decreasing sigma_t will cause the window to be wider.
-sigma_t = 25e-3
+sigma_t = 25e-2
 
 # Converting frequencies (in arbitrary Hz, cycles/second) to rotations per second.
 omega = fs * 2.0 * np.pi
@@ -91,6 +90,9 @@ omega = fs * 2.0 * np.pi
 # Since omega is linear and centered about 0, the window function will be
 # A gaussian centered about 0 as well.
 W2 = np.exp(-omega**2*sigma_t**2)
+
+plt.plot(fs, W2)
+plt.show()
 
 # By normalizing W2 to 1, convolving with W2 will not scale the convolved function,
 # Just change its shape
@@ -135,6 +137,12 @@ XHAT = H*R
 
 # This is just taking the difference in voltages back out of the fourier domain into the time domain
 xhat = np.fft.ifft(np.fft.ifftshift(XHAT)).real
+
+i = 0
+
+while i < len(xhat):
+    xhat[i + 1] = xhat[i]
+    i += 2
 
 plt.scatter(time, xhat, color='blue')
 plt.plot(time, current, color='orange')
