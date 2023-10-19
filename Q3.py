@@ -26,8 +26,7 @@ def get_neuron_response_to_current(time, dt, current, encoder):
     Vth = 1
     v = 0
     voltages = []
-    spike_times = []
-    spikes_positions = []
+    spike_train = []
     i = 0
 
     while i < len(time):
@@ -39,9 +38,8 @@ def get_neuron_response_to_current(time, dt, current, encoder):
 
         if v >= Vth:
             v = 0
-            spike_times.append(time[int(i - 2)])
-            spikes_positions.append(encoder)
-            spikes_positions.append(0)
+            spike_train.append(encoder)
+            spike_train.append(0)
             
             ref_ms = Tref * 100
             j = 0
@@ -52,24 +50,18 @@ def get_neuron_response_to_current(time, dt, current, encoder):
             
         else: # No spike
             voltages.append(v)
-            spikes_positions.append(0)
+            spike_train.append(0)
             i += 1
             
-    return voltages[0:len(time)], spike_times[0:len(time)], spikes_positions[0:len(time)]
+    return voltages[0:len(time)], spike_train[0:len(time)]
     
-def plot_spikerate(time, spike_times, current, voltage, title):
-    plt_lim = -1
+def plot_spikerate(time, spike_train, current, plt_lim, title):
     plt.grid()
-    plt.plot(time[0:plt_lim], voltage[0:plt_lim])
     plt.plot(time[0:plt_lim], current[0:plt_lim])
-    
-    for spike_time in spike_times:
-        if spike_time < time[plt_lim]:
-            continue
-            plt.axvline(x = spike_time, color = "black")
+    plt.plot(time[0:plt_lim], spike_train[0:plt_lim])
         
     
-    plt.ylabel("Voltage")
+    plt.ylabel("Spiketrain & Stimulus")
     plt.xlabel("Time")
     plt.title(title)
     plt.show()
@@ -89,29 +81,29 @@ if __name__ == "__main__":
     
     # 3A)
     
-    voltages_pos_enc, spike_times = get_neuron_response_to_current(time, dt, current, 1)    
-    plot_spikerate(time, spike_times, current, voltages_pos_enc, "3A) Voltage spikes against time, encoder = 1, constant current of 0")
+    voltages_pos_enc, spike_train = get_neuron_response_to_current(time, dt, current, 1)    
+    plot_spikerate(time, spike_train, current, -1, "3A) Spiketrain vs Stimulus, Encoder = 1, Current = 0")
         
-    voltages_neg_enc, spike_times = get_neuron_response_to_current(time, dt, current, -1)
-    plot_spikerate(time, spike_times, current, voltages_neg_enc, "3A) Voltage spikes against time, encoder = -1, constant current of 0")
+    voltages_neg_enc, spike_train = get_neuron_response_to_current(time, dt, current, -1)
+    plot_spikerate(time, spike_train, current, -1, "3A) Spiketrain vs Stimulus, Encoder = -1, Current = 0")
     
     current += 1
-    voltages_pos_enc, spike_times = get_neuron_response_to_current(time, dt, current, 1)        
-    plot_spikerate(time, spike_times, current, voltages_pos_enc, "3A) Voltage spikes against time, encoder = 1, constant current of 1")
+    voltages_pos_enc, spike_train = get_neuron_response_to_current(time, dt, current, 1)        
+    plot_spikerate(time, spike_train, current, -1, "3A) Spiketrain vs Stimulus, Encoder = 1, Current = 1")
      
-    voltages_neg_enc, spike_times = get_neuron_response_to_current(time, dt, current, -1)
-    plot_spikerate(time, spike_times, current, voltages_neg_enc, "3A) Voltage spikes against time, encoder = -1, constant current of 1")
+    voltages_neg_enc, spike_train = get_neuron_response_to_current(time, dt, current, -1)
+    plot_spikerate(time, spike_train, current, -1, "3A) Spiketrain vs Stimulus, Encoder = -1, Current = 1")
     
     
     # 3B)
     
     current = 0.5 * np.sin(10 * np.pi * time)
     
-    voltages, spike_times = get_neuron_response_to_current(time, dt, current, 1)
-    plot_spikerate(time, spike_times, current, voltages, "3B) Voltage spikes against time, encoder = 1, current = 0.5 * Sin(10 * pi * t)")
+    voltages, spike_train = get_neuron_response_to_current(time, dt, current, 1)
+    plot_spikerate(time, spike_train, current, -1, "3B) Voltage spikes against time, encoder = 1, current = 0.5 * Sin(10 * pi * t)")
     
-    voltages, spike_times = get_neuron_response_to_current(time, dt, current, -1)
-    plot_spikerate(time, spike_times, current, voltages, "3B) Voltage spikes against time, encoder = -1, current = 0.5 * Sin(10 * pi * t)")
+    voltages, spike_train = get_neuron_response_to_current(time, dt, current, -1)
+    plot_spikerate(time, spike_train, current, -1, "3B) Voltage spikes against time, encoder = -1, current = 0.5 * Sin(10 * pi * t)")
     
     
     
@@ -119,8 +111,8 @@ if __name__ == "__main__":
     
     time, current, _, _ = generate_signal(T = 2, dt = 0.001, power_desired = 0.5, limit = 5, seed = 12345)
     
-    voltages, spike_times = get_neuron_response_to_current(time, dt, current, 1)
-    plot_spikerate(time, spike_times, current, voltages, "3C) Current and spike output for 5Hz bandlimited random current, encoder = 1")
+    voltages, spike_train = get_neuron_response_to_current(time, dt, current, 1)
+    plot_spikerate(time, spike_train, current, -1, "3C) Current and spike output for 5Hz bandlimited random current, encoder = 1")
     
-    voltages, spike_times = get_neuron_response_to_current(time, dt, current, -1)
-    plot_spikerate(time, spike_times, current, voltages, "3C) Current and spike output for 5Hz bandlimited random current, encoder = -1")
+    voltages, spike_train = get_neuron_response_to_current(time, dt, current, -1)
+    plot_spikerate(time, spike_train, current, -1, "3C) Current and spike output for 5Hz bandlimited random current, encoder = -1")

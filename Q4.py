@@ -15,10 +15,6 @@ dt = 0.001
 
 time, current, frequencies, components = generate_signal(T = 2, dt = dt, power_desired = 0.5, limit = 5, seed = 12345)
 
-
-
-
-
 voltages_pos_enc, spike_times_pos, pos_spikes_positions = get_neuron_response_to_current(time, dt, current, 1)
 voltages_neg_enc, spike_times_neg, neg_spikes_positions = get_neuron_response_to_current(time, dt, current, -1)
 
@@ -32,12 +28,7 @@ spikes = np.array([
     neg_spikes_positions
 ])
 
-plt.plot(time, current)
 
-plt.plot(time, pos_spikes_positions)
-plt.plot(time, neg_spikes_positions)
-
-plt.show()
 
 # x and X should (effectively) be 1D-arrays
 assert x.ndim == 1 and X.ndim == 1
@@ -80,6 +71,7 @@ fs = np.arange(Nt) / T - Nt / (2.0 * T)
 # Increasing sigma_t will cause the window to be tighter
 # Decreasing sigma_t will cause the window to be wider.
 sigma_t = 25e-2
+sigma_t = 1
 
 # Converting frequencies (in arbitrary Hz, cycles/second) to rotations per second.
 omega = fs * 2.0 * np.pi
@@ -138,21 +130,74 @@ XHAT = H*R
 # This is just taking the difference in voltages back out of the fourier domain into the time domain
 xhat = np.fft.ifft(np.fft.ifftshift(XHAT)).real
 
+#B)
+
+plt.plot(fs, abs(H))
+plt.title("4B) Magnitude of H(w) for each frequency")
+plt.xlabel("Frequency (rad/s)")
+plt.ylabel("Magnitude(H(w))")
+plt.show()
+
+plt.plot(time, h)
+plt.title("4B) Filter H in time domain")
+plt.xlabel("Time (seconds)")
+plt.ylabel("Strength")
+plt.show()
+
+#C)
+
 i = 0
 
 while i < len(xhat):
     xhat[i + 1] = xhat[i]
     i += 2
 
-plt.scatter(time, xhat, color='blue')
-plt.plot(time, current, color='orange')
+plt.plot(time, pos_spikes_positions, color='blue', label="Positive Neuron Spiketrain")
+plt.plot(time, neg_spikes_positions, color='orange', label="Negative Neuron Spiketrain")
+plt.plot(time, xhat, color='red', label="Xhat")
+plt.plot(time, current, color='black', label="True x")
+plt.legend()
 plt.grid()
+plt.xlabel("Time")
+plt.ylabel("Voltage & Current")
+plt.title("4C) x(t), x_hat(t), and neuron spikes")
 
 plt.show()
 
+#D)
+
+plt.plot(fs, abs(X))
+plt.title("4D) Magnitude Response of X(w)")
+plt.xlabel("Frequency (rad/s)")
+plt.ylabel("Magnitude(H(w))")
+plt.grid()
+plt.show()
+
+plt.plot(fs, abs(R))
+plt.title("4D) Magnitude Response of R(w)")
+plt.xlabel("Frequency (rad/s)")
+plt.ylabel("Magnitude(H(w))")
+plt.grid()
+plt.show()
+
+plt.plot(fs, abs(XHAT))
+plt.title("4D) Magnitude Response of X_hat(w)")
+plt.xlabel("Frequency (rad/s)")
+plt.ylabel("Magnitude(H(w))")
+plt.grid()
+plt.show()
+
+#4E)
+
+discussion = """
+How do these spectra relate to the optimal filter?
+
+"""
+
+#4F)
 
 
 
-print("Made it!")
+
 
 

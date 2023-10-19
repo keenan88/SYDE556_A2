@@ -37,14 +37,12 @@ def generate_signal(T, dt, power_desired, limit, seed):
     y = np.real(np.fft.ifft(X_w))
     
     power = np.sqrt(np.mean(y**2))
-    print("Power pre scale: ", power)
 
     scaling_factor = power_desired / np.sqrt(np.sum(y**2) / N)
     
     y = y * scaling_factor
     
     power = np.sqrt(np.mean(y**2))
-    print("Power post scale: ", power)
     
     X_w = X_w * scaling_factor
     
