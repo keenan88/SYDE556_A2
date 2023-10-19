@@ -36,16 +36,10 @@ def generate_signal(T, dt, power_desired, limit, seed):
             
     y = np.real(np.fft.ifft(X_w))
 
-    power = np.sqrt(np.sum(np.square(y)) / T)
-
     scaling_factor = power_desired * np.sqrt(T / (np.sum(np.square(y))))
 
     y = y * scaling_factor
     X_w = X_w * scaling_factor
-
-    power = np.sqrt(np.sum(np.square(y)) / T)
-
-    print(power)
     
     return x, y, xf, X_w
     
@@ -68,8 +62,6 @@ plt.show()
 # Feed in the whole hog, positive and negative frequencies. 
 # Gives back number of estimates equal to the number of frequencies fed in.
 y_est = np.fft.ifft(yf) 
-
-
 plt.plot(x, y_est, label="estimate")
 plt.plot(x, y, label="original")
 plt.legend()
@@ -77,29 +69,55 @@ plt.grid()
 plt.show()
 """
 
-#1A) 
-
-T = 1
-dt = 1 / 1000
-power_desired = 0.5
-seed = 18945
-
-for limit in [5, 10, 20]:
-
-    x, y, xf, X_w = generate_signal(T, dt, power_desired, limit, seed)
-
+if __name__ == "__main__":
+    #1A) 
+    
+    T = 1
+    dt = 1 / 1000
+    N = int(T/dt)
+    power_desired = 0.5
+    seed = 18945
+    
+    for limit in [5, 10, 20]:
+    
+        x, y, xf, X_w = generate_signal(T, dt, power_desired, limit, seed)
+    
+        plt.grid()
+        plt.plot(x, y)
+        plt.xlabel("Current (milliamps)")
+        plt.ylabel("time (seconds)")
+        plt.title("1.1A) Random signal limited at " + str(limit) + " Hz")
+        plt.legend()
+        plt.show()
+    
+    
+    
+    #1B)
+    
+    limit = 10
+    
+    
+    summed_Xws = np.zeros(N, dtype=complex)
+    
+    for i in range(100):
+        
+        x, y, xf, X_w = generate_signal(T, dt, power_desired, limit, seed + i)
+        
+        summed_Xws += X_w
+        
+    mean_Xws = summed_Xws / 100
+    plot_lim = limit + 5
+    
+    xf = fftfreq(N, dt) # Gives frequency at each index of yf?
+    plt.plot(xf[:plot_lim], np.abs(mean_Xws[0:plot_lim]))
     plt.grid()
-    plt.plot(x, y)
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.title("1A) Random signal limited at " + str(limit) + " Hz")
-    plt.legend()
+    plt.xlabel("w in radians")
+    plt.ylabel("mag(X(w))")
+    plt.title("1.1B) Average power spectrum of random signal bandlimited at 10 Hz")
     plt.show()
 
 
-
-#1B)
-
+    
 
 
 
