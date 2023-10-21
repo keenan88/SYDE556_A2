@@ -18,35 +18,40 @@ get_ipython().magic('reset -f')
 
 
 
-def generate_signal(T, dt, power_desired, bw, seed):
+def generate_signal_band_reduced(T, dt, power_desired, bw_hz, seed):
     
     np.random.seed(seed)
+    
+    bw_rads = bw_hz * np.pi * 2
     
     N = int(T / dt)
     x = np.linspace(0, T, N, endpoint=False)
     
     X_w = np.zeros((N,), dtype=complex)
-    X_w[0] = np.random.normal(0, 1) + 1j*np.random.normal(0, 1) # Set 0 frequency
-    xf = fftfreq(N, dt) # Gives frequency at each index
+    freq = 0
+    stdev = exp((-freq * freq) / (2 * bw_rads * bw_rads))
+    X_w[0] = np.random.normal(0, stdev) + 1j*np.random.normal(0, stdev) # Set 0 frequency
+    xf_rads = fftfreq(N, dt) * 2 * np.pi # Gives frequency at each index
 
     for freq_idx in range(1, len(X_w)//2):    
-        freq = xf[freq_idx]
-        stdev = exp((-freq * freq) / (2 * bw * bw))
+        freq = xf_rads[freq_idx]
+        stdev = exp((-freq * freq) / (2 * bw_rads * bw_rads))
         signal = np.random.normal(0, stdev) + 1j*np.random.normal(0, stdev)
         X_w[freq_idx] = signal
         X_w[-freq_idx] = np.conjugate(signal) # Set the negative frequency too, ifft needs the pos and neg frequency
             
     y = np.real(np.fft.ifft(X_w))
 
-    scaling_factor = power_desired * np.sqrt(T / (np.sum(np.square(y))))
+    scaling_factor = power_desired / np.sqrt(np.sum(y**2) / N)
 
     y = y * scaling_factor
     X_w = X_w * scaling_factor
     
-    return x, y, xf, X_w
+    power = np.sqrt(np.mean(y**2))
     
+    print("Power: ", power)
     
-
+    return x, y, xf_rads, X_w
 
 
 #1.2A) 
@@ -58,9 +63,9 @@ power_desired = 0.5
 seed = 18945
 bw = 5
 
-for bw in [5, 10, 20]:
+for bw_hz in [5, 10, 20]:
 
-    x, y, xf, X_w = generate_signal(T, dt, power_desired, bw, seed)
+    x, y, xf_rads, X_w = generate_signal_band_reduced(T, dt, power_desired, bw_hz, seed)
 
     plt.grid()
     plt.plot(x, y)
@@ -72,20 +77,19 @@ for bw in [5, 10, 20]:
 
     
 #1.2B)
-bw = 20
+bw_hz = 20
 
 summed_Xws = np.zeros(N, dtype=complex)
 
 for i in range(100):
     
-    x, y, xf, X_w = generate_signal(T, dt, power_desired, bw, seed + i)
+    x, y, xf_rads, X_w = generate_signal_band_reduced(T, dt, power_desired, bw_hz, seed + i)
     
-    summed_Xws += X_w
+    summed_Xws += np.abs(X_w)
     
 mean_Xws = summed_Xws / 100
 
-xf = fftfreq(N, dt) # Gives frequency at each index of yf?
-plt.plot(xf[:N//2][0:100], 2.0/N * np.abs(mean_Xws[0:N//2])[0:100])
+plt.scatter(xf_rads[:N//2][0:100], 2.0/N * np.abs(mean_Xws[0:N//2])[0:100])
 plt.grid()
 plt.xlabel("w in radians")
 plt.ylabel("mag(X(w))")

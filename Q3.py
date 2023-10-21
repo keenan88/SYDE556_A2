@@ -109,7 +109,7 @@ if __name__ == "__main__":
     
     # 3C)
     
-    time, current, _, _ = generate_signal(T = 2, dt = 0.001, power_desired = 0.5, limit = 5, seed = 12345)
+    time, current, _, _ = generate_signal(T = 2, dt = 0.001, power_desired = 0.5, limit_hz = 5, seed = 1239945)
     
     voltages, spike_train = get_neuron_response_to_current(time, dt, current, 1)
     plot_spikerate(time, spike_train, current, -1, "3C) Current and spike output for 5Hz bandlimited random current, encoder = 1")

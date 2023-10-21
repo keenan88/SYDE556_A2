@@ -82,6 +82,7 @@ seed = 18945
 times, currents, _, _ = generate_signal(T, dt, power_desired, limit, seed)
 
 voltages = []
+voltage_spikes = []
 v = 0
 i = 0
 while i < len(times):
@@ -91,8 +92,11 @@ while i < len(times):
         i += Tref * 1000 # Scaled to ms, since that is our step size here
         voltages.append(0)
         voltages.append(0)
+        voltage_spikes.append(1)
+        voltage_spikes.append(0)
     else:
         voltages.append(v)
+        voltage_spikes.append(0)
         i += 1
         
     if i < len(times):
@@ -102,8 +106,8 @@ while i < len(times):
 
 
 plt.grid()
-plt.plot(times[0:500], currents[0:500], label = "Currents")
-plt.plot(times[0:500], voltages[0:500], label = "Voltages")
+plt.plot(times, voltage_spikes, label = "Spikes")
+plt.plot(times, currents, label = "Stimulus")
 plt.xlabel("Time (seconds)")
 plt.ylabel("Voltage")
 plt.title("2C) Random signal limited at " + str(limit) + " Hz used as input to neuron")
@@ -113,11 +117,11 @@ plt.show()
 # 2D)
 
 plt.grid()
-plt.plot(times[0:200], currents[0:200], label = "Currents")
 plt.plot(times[0:200], voltages[0:200], label = "Voltages")
+plt.plot(times[0:200], currents[0:200], label = "Stimulus")
 plt.xlabel("Time (seconds)")
 plt.ylabel("Voltage")
-plt.title("2C) Random signal limited at " + str(limit) + " Hz used as input to neuron")
+plt.title("2D) Random signal limited at " + str(limit) + " Hz used as input to neuron")
 plt.legend()
 plt.show()
 
@@ -138,9 +142,6 @@ E = """
     The extrapolation computational requirements could be minimized by just using linear
     extrapolation, or just by generating a current that has a very small step, and using
     the nearest point in the current to whatever point is needed by the voltage equation.
-    
-    
-    
     
 """
 

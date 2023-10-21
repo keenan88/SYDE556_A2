@@ -17,36 +17,47 @@ get_ipython().magic('reset -f')
 
 
 
-def generate_signal(T, dt, power_desired, limit, seed):
+def generate_signal(T, dt, power_desired, limit_hz, seed):
     
     np.random.seed(seed)
+    
+    limit_rads = limit_hz * 2 * np.pi
     
     N = int(T / dt)
     x = np.linspace(0, T, N, endpoint=False)
     
     X_w = np.zeros((N,), dtype=complex)
     X_w[0] = np.random.normal(0, 1) + 1j*np.random.normal(0, 1) # Set 0 frequency
-    xf = fftfreq(N, dt) # Gives frequency at each index
+    xf_rads = fftfreq(N, dt) * 2 * np.pi # Gives frequency at each index
 
     for freq_idx in range(1, len(X_w)//2):    
-        if xf[freq_idx] < limit: # Only generate signals for frequencies that are below the band limit
+        if xf_rads[freq_idx] < limit_rads: # Only generate signals for frequencies that are below the band limit
             signal = np.random.normal(0, 1) + 1j*np.random.normal(0, 1)
+            # Each index of X_w represents a frequency to be fed into
+            # ifft, in radians/second, NOT hz.
             X_w[freq_idx] = signal
             X_w[-freq_idx] = np.conjugate(signal) # Set the negative frequency too, ifft needs the pos and neg frequency
             
     y = np.real(np.fft.ifft(X_w))
     
-    power = np.sqrt(np.mean(y**2))
+    #power = np.sqrt(np.mean(y**2))
 
     scaling_factor = power_desired / np.sqrt(np.sum(y**2) / N)
+    #print("Scaling factor", scaling_factor)
+    #scaling_factor = power_desired / np.sqrt(np.sum(X_w**2) / N)
+    #print("Scaling factor", scaling_factor)
     
     y = y * scaling_factor
     
     power = np.sqrt(np.mean(y**2))
     
+    print("Power: ", power)
+    
     X_w = X_w * scaling_factor
     
-    return x, y, xf, X_w
+    
+    
+    return x, y, xf_rads, X_w
     
     
 
@@ -81,17 +92,17 @@ if __name__ == "__main__":
     dt = 1 / 1000
     N = int(T/dt)
     power_desired = 0.5
-    seed = 18945
+    seed = 18
     
-    for limit in [5, 10, 20]:
+    for limit_hz in [5, 10, 20]:
     
-        x, y, xf, X_w = generate_signal(T, dt, power_desired, limit, seed)
+        x, y, xf_rads, X_w = generate_signal(T, dt, power_desired, limit_hz, seed)
     
         plt.grid()
         plt.plot(x, y)
-        plt.xlabel("Current (milliamps)")
-        plt.ylabel("time (seconds)")
-        plt.title("1.1A) Random signal limited at " + str(limit) + " Hz")
+        plt.xlabel("Time (seconds)")
+        plt.ylabel("Stimulus")
+        plt.title("1.1A) Random signal limited at " + str(limit_hz) + " Hz")
         plt.legend()
         plt.show()
     
@@ -99,24 +110,23 @@ if __name__ == "__main__":
     
     #1B)
     
-    limit = 10
+    limit_hz = 10
     
     
     summed_Xws = np.zeros(N, dtype=complex)
     
-    for i in range(100):
+    for i in range(1000):
         
-        x, y, xf, X_w = generate_signal(T, dt, power_desired, limit, seed + i)
+        x, y, xf_rads, X_w = generate_signal(T, dt, power_desired, limit_hz, seed + i)
         
-        summed_Xws += X_w
+        summed_Xws += np.abs(X_w)
         
-    mean_Xws = summed_Xws / 100
-    plot_lim = limit + 5
+    mean_Xws = summed_Xws / 1000
+    plot_lim = int(limit_hz + 5)
     
-    xf = fftfreq(N, dt) # Gives frequency at each index of yf?
-    plt.plot(xf[:plot_lim], np.abs(mean_Xws[0:plot_lim]))
+    plt.scatter(xf_rads[:plot_lim], np.abs(mean_Xws[0:plot_lim]))
     plt.grid()
-    plt.xlabel("w in radians")
+    plt.xlabel("Radians/second")
     plt.ylabel("mag(X(w))")
     plt.title("1.1B) Average power spectrum of random signal bandlimited at 10 Hz")
     plt.show()

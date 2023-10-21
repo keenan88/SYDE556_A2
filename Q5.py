@@ -31,10 +31,10 @@ def get_h_of_t(time, n, T):
 
 dt = 0.001
 
-time, current, frequencies, components = generate_signal(T = 2, dt = dt, power_desired = 0.5, limit = 5, seed = 12345)
+time, stimulus, frequencies, components = generate_signal(T = 2, dt = dt, power_desired = 0.5, limit_hz = 5, seed = 12345)
 
-voltages_pos_enc, spike_times_pos, pos_spikes_positions = get_neuron_response_to_current(time, dt, current, 1)
-voltages_neg_enc, spike_times_neg, neg_spikes_positions = get_neuron_response_to_current(time, dt, current, -1)
+voltages_pos_enc, pos_spiketrains = get_neuron_response_to_current(time, dt, stimulus, 1)
+voltages_neg_enc, neg_spiketrains = get_neuron_response_to_current(time, dt, stimulus, -1)
 
 #5A)
 for n in [0, 1, 2]:
@@ -91,20 +91,37 @@ discussion = """
 
 #5E)
 
+# "and using that as your activity matrix A to compute your decode" what??
+# I thought the filtered spikes were attempting to be the stimulus.
+# Like we don't have an A matrix of spikerates compared to stimulii..
+# This seems wack.
+
 h = get_h_of_t(time, n=0, T=0.07)
 
-r = np.array(pos_spikes_positions) - np.array(neg_spikes_positions)
+r = np.array(pos_spiketrains) - np.array(neg_spiketrains)
 
-R = np.fft.fft(r)
+xhat = np.zeros(len(r))
 
-H = np.fft.fft(h)
+for i in range(len(r)):
+    
+    if r[i]:
+        
+        xhat[i:] += h[0: len(xhat) - i]
+        
 
-XHAT = R * H
 
-xhat = np.fft.ifft(XHAT)
+A = np.matrix(xhat)
+
+decoders = np.linalg.inv(A.T * A) * A.T * np.matrix(stimulus)
+
+# A.T * A is singular, and that's no surprise since the first few
+# Values of A are zero...
+
+#stimulus_hat = np.array(decoders * A.T)
 
 plt.plot(time, xhat, label="xhat")
-plt.plot(time, current, label="current")
+plt.plot(time, stimulus, label="stimulus")
+#plt.plot(time, stimulus_hat, label="stimulus_hat")
 
 plt.legend()
 plt.title("5E")
