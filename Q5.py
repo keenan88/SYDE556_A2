@@ -29,12 +29,16 @@ def get_h_of_t(time, n, T):
             
     return h_t
 
+get_ipython().magic('clear')
+get_ipython().magic('reset -f')
+
 dt = 0.001
 
 time, stimulus, frequencies, components = generate_signal(T = 2, dt = dt, power_desired = 0.5, limit_hz = 5, seed = 12345)
 
 voltages_pos_enc, pos_spiketrains = get_neuron_response_to_current(time, dt, stimulus, 1)
 voltages_neg_enc, neg_spiketrains = get_neuron_response_to_current(time, dt, stimulus, -1)
+neg_spiketrains = -1 * np.array(neg_spiketrains)
 
 #5A)
 for n in [0, 1, 2]:
@@ -96,7 +100,9 @@ discussion = """
 # Like we don't have an A matrix of spikerates compared to stimulii..
 # This seems wack.
 
-h = get_h_of_t(time, n=0, T=0.07)
+h = get_h_of_t(time, n=0, T=0.007)
+
+
 
 r = np.array(pos_spiketrains) - np.array(neg_spiketrains)
 
@@ -106,9 +112,19 @@ for i in range(len(r)):
     
     if r[i]:
         
-        xhat[i:] += h[0: len(xhat) - i]
-        
+        xhat[i:] += r[i] * np.array(h[0: len(xhat) - i])
 
+plt.plot(time, r, color='blue', label='differential spiketrain')        
+plt.plot(time, xhat, color='red', label="x_hat")
+plt.plot(time, stimulus, color='black', label="stimulus")
+plt.legend()
+plt.grid()
+plt.title("5E)")
+plt.show()
+
+for i in range(len(xhat)):
+    if xhat[i] == 0:
+        xhat[i] = 0.001 # To avoid a singular matrix
 
 A = np.matrix(xhat)
 
@@ -119,9 +135,6 @@ decoders = np.linalg.inv(A.T * A) * A.T * np.matrix(stimulus)
 
 #stimulus_hat = np.array(decoders * A.T)
 
-plt.plot(time, xhat, label="xhat")
-plt.plot(time, stimulus, label="stimulus")
-#plt.plot(time, stimulus_hat, label="stimulus_hat")
 
 plt.legend()
 plt.title("5E")
