@@ -67,6 +67,13 @@ for x in [0, 1]:
 B = """
 Discussion:
 
+Yes, the expected number of spikes matches the expected spikes for x = 0 and x = 1. This is to be expected, as the neuron
+defined as having 40 spikes/s with 0 current and 150 spikes/s with 1 current. 
+
+Step size in the simulation could affect the accuracy, since in the simulation the voltage can go over vth in the 
+middle of a step, causing inaccuracy, whereas in a real neuron, as soon as vth is hit, the spike occurs. So a super
+big step size could decrease the spike rate in simulation.
+
 """
 
 print(B)

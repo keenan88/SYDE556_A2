@@ -12,11 +12,11 @@ from Q1_1 import generate_signal
 from Q3 import get_neuron_response_to_current, plot_spikerate
 from math import exp
 
-def get_h_of_t(time, n, T):
+def get_h_of_t(time, n, T, dt):
     
     h_t = []
     
-    c = np.sum(pow(time, n) * np.exp(-time/T))
+    c = np.sum(pow(time, n) * np.exp(-time/T)) * dt
     
     for t in time:
         
@@ -25,7 +25,9 @@ def get_h_of_t(time, n, T):
             
         else:
             h = pow(t, n) * exp(-t/T) / c
-            h_t.append(h)      
+            h_t.append(h)    
+            
+    print(np.sum(h_t) * dt)
             
     return h_t
 
@@ -42,13 +44,13 @@ neg_spiketrains = -1 * np.array(neg_spiketrains)
 
 #5A)
 for n in [0, 1, 2]:
-    h_t = get_h_of_t(time, n, 0.007)
+    h_t = get_h_of_t(time, n, 0.007, dt)
     plt.plot(time[0:100], h_t[0:100], label="n = " + str(n))
 plt.grid()
 plt.xlabel("Time (s)")
 plt.ylabel("Scaling")
 plt.title("5A) Postsynaptic Filters")
-plt.ylim([0, 0.15])
+#plt.ylim([0, 0.15])
 plt.legend()
 plt.show()
 
@@ -67,7 +69,7 @@ discussion = """
 
 #5C)
 for T in [0.002, 0.005, 0.01, 0.02]:
-    h_t = get_h_of_t(time, 0, T)
+    h_t = get_h_of_t(time, 0, T, dt)
     plt.plot(time[0:50], h_t[0:50], label="Tau = " + str(T))
     
 plt.grid()
@@ -95,51 +97,43 @@ discussion = """
 
 #5E)
 
-# "and using that as your activity matrix A to compute your decode" what??
-# I thought the filtered spikes were attempting to be the stimulus.
-# Like we don't have an A matrix of spikerates compared to stimulii..
-# This seems wack.
 
-h = get_h_of_t(time, n=0, T=0.007)
+h = get_h_of_t(time, n=0, T=0.007, dt = dt)
 
 
 
-r = np.array(pos_spiketrains) - np.array(neg_spiketrains)
+A = np.zeros((2, len(pos_spiketrains)))
 
-xhat = np.zeros(len(r))
-
-for i in range(len(r)):
+for i in range(len(pos_spiketrains)):
     
-    if r[i]:
+    if pos_spiketrains[i]:
         
-        xhat[i:] += r[i] * np.array(h[0: len(xhat) - i])
+        A[0, i:] += pos_spiketrains[i] * np.array(h[0: len(A[0]) - i])
+        
+    if neg_spiketrains[i]:
+        
+        A[1, i:] += neg_spiketrains[i] * np.array(h[0: len(A[1]) - i])
 
-plt.plot(time, r, color='blue', label='differential spiketrain')        
-plt.plot(time, xhat, color='red', label="x_hat")
-plt.plot(time, stimulus, color='black', label="stimulus")
+A = np.matrix(A)
+
+decoders = np.linalg.inv(A * A.T) * A * np.matrix(stimulus).T
+
+decoders = decoders.T
+
+x_hat = decoders * A
+
+
+
+plt.plot(time, pos_spiketrains)
+plt.plot(time, -neg_spiketrains)     
+plt.plot(time, x_hat.T, color='red', label="x_hat")
+plt.plot(time, stimulus, color='black', label="True Stimulus")
+
 plt.legend()
 plt.grid()
 plt.title("5E)")
-plt.show()
-
-for i in range(len(xhat)):
-    if xhat[i] == 0:
-        xhat[i] = 0.001 # To avoid a singular matrix
-
-A = np.matrix(xhat)
-
-decoders = np.linalg.inv(A.T * A) * A.T * np.matrix(stimulus)
-
-# A.T * A is singular, and that's no surprise since the first few
-# Values of A are zero...
-
-#stimulus_hat = np.array(decoders * A.T)
-
-
-plt.legend()
-plt.title("5E")
-plt.xlabel("y")
-plt.ylabel("y")
+plt.xlabel("Time (s)")
+plt.ylabel("Stimulus")
 plt.show()
 
 
